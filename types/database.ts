@@ -1,132 +1,416 @@
-export type ReferralStatus = 'new' | 'in_progress' | 'completed' | 'archived';
-export type ReferralPriority = 'low' | 'normal' | 'high' | 'urgent';
-export type ProviderRole = 'provider' | 'admin';
-export type DocumentType = 'referral_letter' | 'treatment_outcome' | 'signed_form' | 'x_ray' | 'other';
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-export interface Database {
+export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
-      practices: {
-        Row: Practice;
-        Insert: Omit<Practice, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Practice, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      providers: {
-        Row: Provider;
-        Insert: Omit<Provider, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Provider, 'id' | 'created_at' | 'updated_at'>>;
-      };
       patients: {
-        Row: Patient;
-        Insert: Omit<Patient, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Patient, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      referrals: {
-        Row: Referral;
-        Insert: Omit<Referral, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Referral, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      referral_messages: {
-        Row: ReferralMessage;
-        Insert: Omit<ReferralMessage, 'id' | 'created_at'>;
-        Update: Partial<Omit<ReferralMessage, 'id' | 'created_at'>>;
-      };
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          dob: string
+          email: string | null
+          first_name: string
+          id: string
+          insurance_member_id: string | null
+          insurance_provider: string | null
+          last_name: string
+          phone: string | null
+          practice_id: string | null
+          state: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          dob: string
+          email?: string | null
+          first_name: string
+          id?: string
+          insurance_member_id?: string | null
+          insurance_provider?: string | null
+          last_name: string
+          phone?: string | null
+          practice_id?: string | null
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          dob?: string
+          email?: string | null
+          first_name?: string
+          id?: string
+          insurance_member_id?: string | null
+          insurance_provider?: string | null
+          last_name?: string
+          phone?: string | null
+          practice_id?: string | null
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patients_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practices: {
+        Row: {
+          address: string | null
+          city: string | null
+          clerk_org_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          npi: string | null
+          phone: string | null
+          specialty: string | null
+          state: string | null
+          updated_at: string
+          website: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          clerk_org_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          npi?: string | null
+          phone?: string | null
+          specialty?: string | null
+          state?: string | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          clerk_org_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          npi?: string | null
+          phone?: string | null
+          specialty?: string | null
+          state?: string | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
+      providers: {
+        Row: {
+          clerk_user_id: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          license_number: string | null
+          npi: string | null
+          phone: string | null
+          practice_id: string | null
+          role: string
+          specialty: string | null
+          updated_at: string
+        }
+        Insert: {
+          clerk_user_id: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          license_number?: string | null
+          npi?: string | null
+          phone?: string | null
+          practice_id?: string | null
+          role?: string
+          specialty?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clerk_user_id?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          license_number?: string | null
+          npi?: string | null
+          phone?: string | null
+          practice_id?: string | null
+          role?: string
+          specialty?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "providers_practice_id_fkey"
+            columns: ["practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_documents: {
-        Row: ReferralDocument;
-        Insert: Omit<ReferralDocument, 'id' | 'created_at'>;
-        Update: Partial<Omit<ReferralDocument, 'id' | 'created_at'>>;
-      };
-    };
-  };
-}
-
-export interface Practice {
-  id: string;
-  clerk_org_id: string | null;
-  name: string;
-  specialty: string | null;
-  npi: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  phone: string | null;
-  email: string | null;
-  website: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Provider {
-  id: string;
-  clerk_user_id: string;
-  practice_id: string | null;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string | null;
-  specialty: string | null;
-  npi: string | null;
-  license_number: string | null;
-  role: ProviderRole;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Patient {
-  id: string;
-  practice_id: string;
-  first_name: string;
-  last_name: string;
-  dob: string;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  insurance_provider: string | null;
-  insurance_member_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Referral {
-  id: string;
-  patient_id: string;
-  referring_practice_id: string;
-  referring_provider_id: string;
-  receiving_practice_id: string;
-  receiving_provider_id: string | null;
-  treatment: string;
-  status: ReferralStatus;
-  priority: ReferralPriority;
-  notes: string | null;
-  appointment_date: string | null;
-  completed_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ReferralMessage {
-  id: string;
-  referral_id: string;
-  sender_id: string;
-  content: string;
-  is_read: boolean;
-  created_at: string;
-}
-
-export interface ReferralDocument {
-  id: string;
-  referral_id: string;
-  uploaded_by: string;
-  name: string;
-  type: DocumentType;
-  storage_path: string;
-  file_size: number | null;
-  mime_type: string | null;
-  signed_at: string | null;
-  signed_by: string | null;
-  created_at: string;
+        Row: {
+          created_at: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          name: string
+          referral_id: string
+          signed_at: string | null
+          signed_by: string | null
+          storage_path: string
+          type: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          name: string
+          referral_id: string
+          signed_at?: string | null
+          signed_by?: string | null
+          storage_path: string
+          type: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          name?: string
+          referral_id?: string
+          signed_at?: string | null
+          signed_by?: string | null
+          storage_path?: string
+          type?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_documents_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_documents_signed_by_fkey"
+            columns: ["signed_by"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          referral_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          referral_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          referral_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_messages_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          appointment_date: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          patient_id: string
+          priority: string
+          receiving_practice_id: string
+          receiving_provider_id: string | null
+          referring_practice_id: string
+          referring_provider_id: string
+          status: string
+          treatment: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_date?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          priority?: string
+          receiving_practice_id: string
+          receiving_provider_id?: string | null
+          referring_practice_id: string
+          referring_provider_id: string
+          status?: string
+          treatment: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          priority?: string
+          receiving_practice_id?: string
+          receiving_provider_id?: string | null
+          referring_practice_id?: string
+          referring_provider_id?: string
+          status?: string
+          treatment?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_receiving_practice_id_fkey"
+            columns: ["receiving_practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_receiving_provider_id_fkey"
+            columns: ["receiving_provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referring_practice_id_fkey"
+            columns: ["referring_practice_id"]
+            isOneToOne: false
+            referencedRelation: "practices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referring_provider_id_fkey"
+            columns: ["referring_provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      current_practice_id: { Args: never; Returns: string }
+      get_referral_inbox_data: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          created_at: string
+          from_practice_name: string
+          from_provider_first: string
+          from_provider_last: string
+          id: string
+          patient_dob: string
+          patient_first_name: string
+          patient_last_name: string
+          status: string
+          to_practice_name: string
+          to_provider_first: string
+          to_provider_last: string
+          treatment: string
+        }[]
+      }
+      get_referral_status_counts: {
+        Args: never
+        Returns: {
+          count: number
+          status: string
+        }[]
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
