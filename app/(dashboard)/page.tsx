@@ -1,7 +1,8 @@
-import { Bell, Plus } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import ReferralStatsBar from '@/components/referrals/ReferralStatsBar';
 import ReferralTable from '@/components/referrals/ReferralTable';
 import ReferralFilters from '@/components/referrals/ReferralFilters';
+import NewReferralDrawer from '@/components/referrals/NewReferralDrawer';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Referral, ReferralStats, ReferralStatus } from '@/types/referral';
 
@@ -91,10 +92,7 @@ export default async function InboxPage() {
             <Bell size={18} />
             <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-blue-500 rounded-full" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-            <Plus size={16} />
-            New Referral
-          </button>
+          <NewReferralDrawer />
         </div>
       </header>
 

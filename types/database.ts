@@ -379,7 +379,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_patient: {
+        Args: {
+          p_dob: string
+          p_email?: string
+          p_first_name: string
+          p_last_name: string
+          p_phone?: string
+          p_practice_id: string
+        }
+        Returns: string
+      }
+      create_referral: {
+        Args: {
+          p_notes?: string
+          p_patient_id: string
+          p_priority?: string
+          p_receiving_practice_id: string
+          p_receiving_provider_id?: string
+          p_referring_practice_id: string
+          p_referring_provider_id: string
+          p_treatment: string
+        }
+        Returns: string
+      }
       current_practice_id: { Args: never; Returns: string }
+      get_providers_by_practice: {
+        Args: { p_practice_id: string }
+        Returns: {
+          first_name: string
+          id: string
+          last_name: string
+          specialty: string
+        }[]
+      }
       get_referral_inbox_data: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: {
@@ -403,6 +436,25 @@ export type Database = {
         Returns: {
           count: number
           status: string
+        }[]
+      }
+      search_patients: {
+        Args: { p_practice_id?: string; p_query?: string }
+        Returns: {
+          dob: string
+          first_name: string
+          id: string
+          last_name: string
+        }[]
+      }
+      search_practices: {
+        Args: { p_exclude_id?: string; p_query?: string }
+        Returns: {
+          city: string
+          id: string
+          name: string
+          specialty: string
+          state: string
         }[]
       }
     }
