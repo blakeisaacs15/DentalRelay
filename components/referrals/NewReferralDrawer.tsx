@@ -6,15 +6,27 @@ import {
   X, Plus, Search, ChevronRight, ChevronLeft, CheckCircle2,
 } from 'lucide-react';
 import { createSupabaseClient } from '@/lib/supabase/client';
-
-const CURRENT_PRACTICE_ID = '00000000-0000-0000-0000-000000000001';
-const CURRENT_PROVIDER_ID = '10000000-0000-0000-0000-000000000001';
+import { CURRENT_PRACTICE_ID, CURRENT_PROVIDER_ID } from '@/lib/current-user';
+import ClinicalTemplateForm, { EMPTY_CLINICAL_DATA, type ClinicalData } from './ClinicalTemplateForm';
 
 type PatientResult = { id: string; first_name: string; last_name: string; dob: string };
 type PracticeResult = { id: string; name: string; city: string; state: string; specialty: string };
 type ProviderResult = { id: string; first_name: string; last_name: string; specialty: string };
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 type SelectedPatient = { id: string; firstName: string; lastName: string; dob: string };
+
+function hasClinicalData(data: ClinicalData) {
+  return (
+    data.teeth.length > 0 ||
+    data.procedures.length > 0 ||
+    data.consultations.length > 0 ||
+    data.implantTiming !== null ||
+    data.antibioticPremedication !== null ||
+    data.xrayStatus !== null ||
+    data.implantBrand !== null ||
+    data.caseNotes.trim().length > 0
+  );
+}
 
 function fmtDob(dob: string) {
   return new Date(dob + 'T00:00:00').toLocaleDateString('en-US', {
@@ -276,9 +288,10 @@ function StepRecipient({
 // ─── Step 3: Details ──────────────────────────────────────────────────────────
 
 const PRIORITIES = [
-  { value: 'routine', label: 'Routine', desc: 'Non-urgent, standard scheduling' },
-  { value: 'urgent', label: 'Urgent', desc: 'Within 1–2 weeks' },
-  { value: 'emergency', label: 'Emergency', desc: 'Immediate attention needed' },
+  { value: 'low', label: 'Low', desc: 'No rush — schedule whenever convenient' },
+  { value: 'normal', label: 'Normal', desc: 'Non-urgent, standard scheduling' },
+  { value: 'high', label: 'High', desc: 'Within 1–2 weeks' },
+  { value: 'urgent', label: 'Urgent', desc: 'Immediate attention needed' },
 ] as const;
 
 function StepDetails({
@@ -288,8 +301,8 @@ function StepDetails({
 }: {
   treatment: string;
   onTreatmentChange: (v: string) => void;
-  priority: 'routine' | 'urgent' | 'emergency';
-  onPriorityChange: (v: 'routine' | 'urgent' | 'emergency') => void;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  onPriorityChange: (v: 'low' | 'normal' | 'high' | 'urgent') => void;
   notes: string;
   onNotesChange: (v: string) => void;
 }) {
@@ -391,8 +404,11 @@ export default function NewReferralDrawer() {
 
   // Step 3 state
   const [treatment, setTreatment] = useState('');
-  const [priority, setPriority] = useState<'routine' | 'urgent' | 'emergency'>('routine');
+  const [priority, setPriority] = useState<'low' | 'normal' | 'high' | 'urgent'>('normal');
   const [notes, setNotes] = useState('');
+
+  // Step 4 state (optional clinical template)
+  const [clinicalData, setClinicalData] = useState<ClinicalData>(EMPTY_CLINICAL_DATA);
 
   // Patient search debounce
   useEffect(() => {
@@ -450,8 +466,9 @@ export default function NewReferralDrawer() {
     setProviders([]);
     setSelectedProviderId('');
     setTreatment('');
-    setPriority('routine');
+    setPriority('normal');
     setNotes('');
+    setClinicalData(EMPTY_CLINICAL_DATA);
     setSuccess(false);
     setSubmitError(null);
   }
@@ -466,9 +483,13 @@ export default function NewReferralDrawer() {
     : !!(newPatient.firstName.trim() && newPatient.lastName.trim() && newPatient.dob);
   const step2Valid = selectedPractice !== null;
   const step3Valid = treatment.trim().length > 0;
+  if (typeof window !== 'undefined') {
+    (window as any).__drDebug = { step, patientMode, patientQuery, selectedPatient, step1Valid, treatment, priority, step3Valid };
+    console.log('[DR-DEBUG]', JSON.stringify({ step, patientMode, patientQuery, selectedPatient, step1Valid, treatment, priority, step3Valid }));
+  }
 
   async function handleSubmit() {
-    if (!step3Valid || !step2Valid || submitting) return;
+    if (!step3Valid || !step2Valid || !step1Valid || submitting) return;
     setSubmitting(true);
     setSubmitError(null);
 
@@ -499,6 +520,7 @@ export default function NewReferralDrawer() {
         p_priority: priority,
         ...(selectedProviderId && { p_receiving_provider_id: selectedProviderId }),
         ...(notes.trim() && { p_notes: notes.trim() }),
+        ...(hasClinicalData(clinicalData) && { p_clinical_data: clinicalData }),
       });
       if (refError) throw new Error(refError.message);
 
@@ -514,7 +536,7 @@ export default function NewReferralDrawer() {
     }
   }
 
-  const stepLabel = step === 1 ? 'Patient' : step === 2 ? 'Recipient' : 'Details';
+  const stepLabel = step === 1 ? 'Patient' : step === 2 ? 'Recipient' : step === 3 ? 'Details' : 'Clinical Details';
 
   return (
     <>
@@ -560,7 +582,7 @@ export default function NewReferralDrawer() {
             <div>
               <h2 className="text-base font-semibold text-slate-900">New Referral</h2>
               {!success && (
-                <p className="text-xs text-slate-400 mt-0.5">{stepLabel} — Step {step} of 3</p>
+                <p className="text-xs text-slate-400 mt-0.5">{stepLabel} — Step {step} of 4</p>
               )}
             </div>
           </div>
@@ -576,7 +598,7 @@ export default function NewReferralDrawer() {
         {/* Progress */}
         {!success && (
           <div className="flex px-6 pt-4 gap-1.5 shrink-0">
-            {[1, 2, 3].map((s) => (
+            {[1, 2, 3, 4].map((s) => (
               <div
                 key={s}
                 className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
@@ -643,7 +665,7 @@ export default function NewReferralDrawer() {
               selectedProviderId={selectedProviderId}
               onProviderChange={setSelectedProviderId}
             />
-          ) : (
+          ) : step === 3 ? (
             <StepDetails
               treatment={treatment}
               onTreatmentChange={setTreatment}
@@ -652,6 +674,16 @@ export default function NewReferralDrawer() {
               notes={notes}
               onNotesChange={setNotes}
             />
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-slate-700">Clinical template (optional)</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Add procedure and consultation details so the receiving provider can prepare in advance.
+                </p>
+              </div>
+              <ClinicalTemplateForm data={clinicalData} onChange={setClinicalData} />
+            </div>
           )}
         </div>
 
@@ -670,10 +702,9 @@ export default function NewReferralDrawer() {
               >
                 Cancel
               </button>
-              {step < 3 ? (
+              {step < 4 ? (
                 <button
-                  disabled={step === 1 ? !step1Valid : !step2Valid}
-                  onClick={() => setStep((s) => (s + 1) as Step)}
+disabled={step === 1 ? !step1Valid : step === 2 ? !step2Valid : step === 3 ? !step3Valid : false}                  onClick={() => setStep((s) => (s + 1) as Step)}
                   className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
                 >
                   Continue

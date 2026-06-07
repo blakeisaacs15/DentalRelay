@@ -1,3 +1,6 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
 import type { Referral, ReferralStatus } from '@/types/referral';
 import { MoreHorizontal } from 'lucide-react';
 
@@ -40,6 +43,8 @@ const patientInitialColors = [
 ];
 
 export default function ReferralTable({ referrals, total }: Props) {
+  const router = useRouter();
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <table className="w-full text-sm">
@@ -64,6 +69,7 @@ export default function ReferralTable({ referrals, total }: Props) {
             return (
               <tr
                 key={referral.id}
+                onClick={() => router.push(`/referrals/${referral.id}`)}
                 className="hover:bg-slate-50/70 transition-colors cursor-pointer"
               >
                 {/* Patient */}
@@ -110,7 +116,10 @@ export default function ReferralTable({ referrals, total }: Props) {
 
                 {/* Actions */}
                 <td className="px-5 py-3.5">
-                  <button className="p-1.5 rounded-md text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-colors">
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 rounded-md text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-colors"
+                  >
                     <MoreHorizontal size={16} />
                   </button>
                 </td>
