@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Calendar, Mail, MapPin, Phone } from 'lucide-react';
 import MessageThread, { type ThreadMessage } from '@/components/referrals/MessageThread';
+import OutcomeLetterPanel, { type OutcomeLetter } from '@/components/referrals/OutcomeLetterPanel';
 import ReferralStatusControl from '@/components/referrals/ReferralStatusControl';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { ReferralStatus } from '@/types/referral';
@@ -50,6 +51,24 @@ type MessageRow = {
   sender_practice_name: string;
 };
 
+type OutcomeLetterRow = {
+  id: string;
+  treatment_performed: string;
+  outcome: 'excellent' | 'good' | 'fair' | 'guarded';
+  patient_response: string | null;
+  follow_up_required: boolean;
+  follow_up_notes: string | null;
+  recommendations: string | null;
+  signature_name: string;
+  signed_at: string;
+  created_at: string;
+  provider_id: string;
+  provider_first_name: string;
+  provider_last_name: string;
+  provider_specialty: string | null;
+  practice_name: string;
+};
+
 const priorityConfig: Record<string, { label: string; className: string }> = {
   low: { label: 'Low Priority', className: 'bg-slate-100 text-slate-500' },
   normal: { label: 'Normal', className: 'bg-slate-100 text-slate-600' },
@@ -78,9 +97,10 @@ export default async function ReferralDetailPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: detailRows }, { data: messageRows }] = await Promise.all([
+  const [{ data: detailRows }, { data: messageRows }, { data: letterRows }] = await Promise.all([
     supabase.rpc('get_referral_detail', { p_referral_id: id }),
     supabase.rpc('get_referral_messages', { p_referral_id: id }),
+    supabase.rpc('get_outcome_letters', { p_referral_id: id }),
   ]);
 
   const detail = (detailRows as DetailRow[] | null)?.[0];
@@ -94,6 +114,21 @@ export default async function ReferralDetailPage({ params }: PageProps) {
     senderId: m.sender_id,
     senderName: `Dr. ${m.sender_first_name} ${m.sender_last_name}`,
     senderPractice: m.sender_practice_name,
+  }));
+
+  const outcomeLetters: OutcomeLetter[] = ((letterRows as OutcomeLetterRow[] | null) ?? []).map((l) => ({
+    id: l.id,
+    treatmentPerformed: l.treatment_performed,
+    outcome: l.outcome,
+    patientResponse: l.patient_response,
+    followUpRequired: l.follow_up_required,
+    followUpNotes: l.follow_up_notes,
+    recommendations: l.recommendations,
+    signatureName: l.signature_name,
+    signedAt: l.signed_at,
+    providerName: `Dr. ${l.provider_first_name} ${l.provider_last_name}`,
+    providerSpecialty: l.provider_specialty,
+    practiceName: l.practice_name,
   }));
 
   const priorityStyle = priorityConfig[detail.priority] ?? priorityConfig.normal;
@@ -225,6 +260,15 @@ export default async function ReferralDetailPage({ params }: PageProps) {
           <div className="lg:col-span-3">
             <MessageThread referralId={detail.id} initialMessages={messages} />
           </div>
+        </div>
+
+        <div className="mt-5">
+          <OutcomeLetterPanel
+            referralId={detail.id}
+            recipientName={`Dr. ${detail.from_provider_first} ${detail.from_provider_last}`}
+            recipientPractice={detail.from_practice_name}
+            initialLetters={outcomeLetters}
+          />
         </div>
       </div>
     </div>

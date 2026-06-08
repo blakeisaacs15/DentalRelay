@@ -101,6 +101,24 @@ create table if not exists referral_documents (
   created_at    timestamptz not null default now()
 );
 
+-- Outcome letters (specialist's signed report back to the referring doctor after treatment)
+create table if not exists outcome_letters (
+  id                   uuid primary key default gen_random_uuid(),
+  referral_id          uuid not null references referrals(id) on delete cascade,
+  provider_id          uuid not null references providers(id),
+  treatment_performed  text not null,
+  outcome              text not null,          -- excellent, good, fair, guarded
+  patient_response     text,
+  follow_up_required   boolean not null default false,
+  follow_up_notes      text,
+  recommendations      text,
+  signed_by            uuid not null references providers(id),
+  signature_name       text not null,
+  signed_at            timestamptz not null default now(),
+  created_at           timestamptz not null default now(),
+  constraint outcome_letters_outcome_check check (outcome in ('excellent', 'good', 'fair', 'guarded'))
+);
+
 -- ============================================================
 -- Indexes
 -- ============================================================
@@ -113,6 +131,7 @@ create index if not exists idx_referrals_referring      on referrals(referring_p
 create index if not exists idx_referrals_receiving      on referrals(receiving_practice_id);
 create index if not exists idx_referral_messages_ref    on referral_messages(referral_id);
 create index if not exists idx_referral_docs_ref        on referral_documents(referral_id);
+create index if not exists idx_outcome_letters_referral on outcome_letters(referral_id);
 
 -- ============================================================
 -- Row-Level Security
@@ -123,6 +142,7 @@ alter table patients           enable row level security;
 alter table referrals          enable row level security;
 alter table referral_messages  enable row level security;
 alter table referral_documents enable row level security;
+alter table outcome_letters    enable row level security;
 
 -- Helper: resolve clerk_user_id → practice_id
 create or replace function current_practice_id()
@@ -199,6 +219,22 @@ create policy "referral_documents_select" on referral_documents
 create policy "referral_documents_insert" on referral_documents
   for insert with check (
     uploaded_by in (select id from providers where practice_id = current_practice_id())
+  );
+
+-- outcome_letters: same visibility as messages/documents
+create policy "outcome_letters_select" on outcome_letters
+  for select using (
+    exists (
+      select 1 from referrals r
+      where r.id = referral_id
+        and (r.referring_practice_id = current_practice_id()
+             or r.receiving_practice_id = current_practice_id())
+    )
+  );
+
+create policy "outcome_letters_insert" on outcome_letters
+  for insert with check (
+    provider_id in (select id from providers where practice_id = current_practice_id())
   );
 
 -- ============================================================

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  X, Plus, Search, ChevronRight, ChevronLeft, CheckCircle2,
+  X, Plus, Search, ChevronRight, ChevronLeft, CheckCircle2, UserPlus,
 } from 'lucide-react';
 import { createSupabaseClient } from '@/lib/supabase/client';
 import { CURRENT_PRACTICE_ID, CURRENT_PROVIDER_ID } from '@/lib/current-user';
@@ -37,14 +37,14 @@ function fmtDob(dob: string) {
 // ─── Step 1: Patient ──────────────────────────────────────────────────────────
 
 function StepPatient({
-  mode, onModeChange,
+  mode,
   query, onQueryChange,
   results, loading,
   selected, onSelect, onClear,
   newPatient, onNewChange,
+  onStartNew, onBackToSearch,
 }: {
   mode: 'search' | 'new';
-  onModeChange: (m: 'search' | 'new') => void;
   query: string;
   onQueryChange: (v: string) => void;
   results: PatientResult[];
@@ -54,30 +54,16 @@ function StepPatient({
   onClear: () => void;
   newPatient: { firstName: string; lastName: string; dob: string; phone: string; email: string };
   onNewChange: (field: string, value: string) => void;
+  onStartNew: () => void;
+  onBackToSearch: () => void;
 }) {
+  const trimmedQuery = query.trim();
+
   return (
     <div className="space-y-5">
-      <div>
-        <p className="text-sm font-medium text-slate-700 mb-3">Who is this referral for?</p>
-        <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 gap-0.5">
-          {(['search', 'new'] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => onModeChange(m)}
-              className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors ${
-                mode === m
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {m === 'search' ? 'Search patients' : 'New patient'}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {mode === 'search' ? (
         <div>
+          <p className="text-sm font-medium text-slate-700 mb-3">Who is this referral for?</p>
           {selected ? (
             <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
               <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
@@ -98,12 +84,15 @@ function StepPatient({
                 <input
                   type="text"
                   autoFocus
-                  placeholder="Search by name…"
+                  placeholder="Search by patient name…"
                   value={query}
                   onChange={(e) => onQueryChange(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+              <p className="text-xs text-slate-400 mt-2">
+                Search for the patient first to avoid creating a duplicate record.
+              </p>
               {loading && <p className="text-center text-xs text-slate-400 py-6">Searching…</p>}
               {!loading && results.length > 0 && (
                 <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
@@ -124,18 +113,38 @@ function StepPatient({
                   ))}
                 </div>
               )}
-              {!loading && query && results.length === 0 && (
-                <p className="text-center text-xs text-slate-400 py-6">No patients found</p>
+              {!loading && trimmedQuery && results.length === 0 && (
+                <div className="mt-2 space-y-2">
+                  <p className="text-center text-xs text-slate-400 py-2">No patients matched “{trimmedQuery}”</p>
+                  <button
+                    onClick={onStartNew}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-slate-300 rounded-xl text-sm font-medium text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                  >
+                    <UserPlus size={15} />
+                    Add “{trimmedQuery}” as a new patient
+                  </button>
+                </div>
               )}
             </>
           )}
         </div>
       ) : (
         <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-700">New patient</p>
+            <button
+              onClick={onBackToSearch}
+              className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              <ChevronLeft size={13} />
+              Back to search
+            </button>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="First name" required>
               <input
                 type="text"
+                autoFocus
                 value={newPatient.firstName}
                 onChange={(e) => onNewChange('firstName', e.target.value)}
                 placeholder="Jane"
@@ -483,10 +492,6 @@ export default function NewReferralDrawer() {
     : !!(newPatient.firstName.trim() && newPatient.lastName.trim() && newPatient.dob);
   const step2Valid = selectedPractice !== null;
   const step3Valid = treatment.trim().length > 0;
-  if (typeof window !== 'undefined') {
-    (window as any).__drDebug = { step, patientMode, patientQuery, selectedPatient, step1Valid, treatment, priority, step3Valid };
-    console.log('[DR-DEBUG]', JSON.stringify({ step, patientMode, patientQuery, selectedPatient, step1Valid, treatment, priority, step3Valid }));
-  }
 
   async function handleSubmit() {
     if (!step3Valid || !step2Valid || !step1Valid || submitting) return;
@@ -624,12 +629,6 @@ export default function NewReferralDrawer() {
           ) : step === 1 ? (
             <StepPatient
               mode={patientMode}
-              onModeChange={(m) => {
-                setPatientMode(m);
-                setSelectedPatient(null);
-                setPatientQuery('');
-                setPatientResults([]);
-              }}
               query={patientQuery}
               onQueryChange={setPatientQuery}
               results={patientResults}
@@ -643,6 +642,23 @@ export default function NewReferralDrawer() {
               onClear={() => setSelectedPatient(null)}
               newPatient={newPatient}
               onNewChange={(field, value) => setNewPatient((prev) => ({ ...prev, [field]: value }))}
+              onStartNew={() => {
+                const [firstName, ...rest] = patientQuery.trim().split(/\s+/);
+                setNewPatient({
+                  firstName: firstName ?? '',
+                  lastName: rest.join(' '),
+                  dob: '',
+                  phone: '',
+                  email: '',
+                });
+                setPatientMode('new');
+                setPatientQuery('');
+                setPatientResults([]);
+              }}
+              onBackToSearch={() => {
+                setPatientMode('search');
+                setNewPatient({ firstName: '', lastName: '', dob: '', phone: '', email: '' });
+              }}
             />
           ) : step === 2 ? (
             <StepRecipient
@@ -704,7 +720,8 @@ export default function NewReferralDrawer() {
               </button>
               {step < 4 ? (
                 <button
-disabled={step === 1 ? !step1Valid : step === 2 ? !step2Valid : step === 3 ? !step3Valid : false}                  onClick={() => setStep((s) => (s + 1) as Step)}
+                  disabled={step === 1 ? !step1Valid : step === 2 ? !step2Valid : step === 3 ? !step3Valid : false}
+                  onClick={() => setStep((s) => (s + 1) as Step)}
                   className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
                 >
                   Continue

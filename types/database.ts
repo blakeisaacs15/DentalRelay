@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      outcome_letters: {
+        Row: {
+          created_at: string
+          follow_up_notes: string | null
+          follow_up_required: boolean
+          id: string
+          outcome: string
+          patient_response: string | null
+          provider_id: string
+          recommendations: string | null
+          referral_id: string
+          signature_name: string
+          signed_at: string
+          signed_by: string
+          treatment_performed: string
+        }
+        Insert: {
+          created_at?: string
+          follow_up_notes?: string | null
+          follow_up_required?: boolean
+          id?: string
+          outcome: string
+          patient_response?: string | null
+          provider_id: string
+          recommendations?: string | null
+          referral_id: string
+          signature_name: string
+          signed_at?: string
+          signed_by: string
+          treatment_performed: string
+        }
+        Update: {
+          created_at?: string
+          follow_up_notes?: string | null
+          follow_up_required?: boolean
+          id?: string
+          outcome?: string
+          patient_response?: string | null
+          provider_id?: string
+          recommendations?: string | null
+          referral_id?: string
+          signature_name?: string
+          signed_at?: string
+          signed_by?: string
+          treatment_performed?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outcome_letters_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outcome_letters_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outcome_letters_signed_by_fkey"
+            columns: ["signed_by"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           address: string | null
@@ -384,6 +454,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_outcome_letter: {
+        Args: {
+          p_follow_up_notes?: string
+          p_follow_up_required?: boolean
+          p_outcome: string
+          p_patient_response?: string
+          p_provider_id: string
+          p_recommendations?: string
+          p_referral_id: string
+          p_signature_name: string
+          p_signed_by?: string
+          p_treatment_performed: string
+        }
+        Returns: string
+      }
       create_patient: {
         Args: {
           p_dob: string
@@ -410,6 +495,41 @@ export type Database = {
         Returns: string
       }
       current_practice_id: { Args: never; Returns: string }
+      get_outcome_letters: {
+        Args: { p_referral_id: string }
+        Returns: {
+          created_at: string
+          follow_up_notes: string
+          follow_up_required: boolean
+          id: string
+          outcome: string
+          patient_response: string
+          practice_name: string
+          provider_first_name: string
+          provider_id: string
+          provider_last_name: string
+          provider_specialty: string
+          recommendations: string
+          signature_name: string
+          signed_at: string
+          treatment_performed: string
+        }[]
+      }
+      get_patients_for_practice: {
+        Args: { p_practice_id: string; p_query?: string }
+        Returns: {
+          dob: string
+          email: string
+          first_name: string
+          id: string
+          insurance_provider: string
+          last_name: string
+          last_referral_at: string
+          last_referral_status: string
+          phone: string
+          referral_count: number
+        }[]
+      }
       get_providers_by_practice: {
         Args: { p_practice_id: string }
         Returns: {
