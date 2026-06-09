@@ -1,25 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { CURRENT_PRACTICE_ID } from '@/lib/current-user';
+import type { OpenDentalPatient } from '@/types/open-dental';
 
-export type OpenDentalPatient = {
-  PatNum: number;
-  LName: string;
-  FName: string;
-  MiddleI: string;
-  Preferred: string;
-  PatStatus: string;
-  Gender: string;
-  Birthdate: string;
-  HmPhone: string;
-  WirelessPhone: string;
-  WkPhone: string;
-  Email: string;
-  Address: string;
-  City: string;
-  State: string;
-  Zip: string;
-};
+export type { OpenDentalPatient };
 
 async function getCredentials(): Promise<{ customerKey: string; patientKey: string } | null> {
   // Env vars take priority (dev override)

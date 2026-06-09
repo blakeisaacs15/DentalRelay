@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Search, AlertCircle } from 'lucide-react';
-import type { OpenDentalPatient } from '@/app/api/open-dental/patients/route';
+import type { OpenDentalPatient } from '@/types/open-dental';
 
 export type { OpenDentalPatient };
 
