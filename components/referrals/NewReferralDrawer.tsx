@@ -8,12 +8,14 @@ import {
 import { createSupabaseClient } from '@/lib/supabase/client';
 import { CURRENT_PRACTICE_ID, CURRENT_PROVIDER_ID } from '@/lib/current-user';
 import ClinicalTemplateForm, { EMPTY_CLINICAL_DATA, type ClinicalData } from './ClinicalTemplateForm';
+import OpenDentalPatientSearch, { type OpenDentalPatient } from './OpenDentalPatientSearch';
 
 type PatientResult = { id: string; first_name: string; last_name: string; dob: string };
 type PracticeResult = { id: string; name: string; city: string; state: string; specialty: string };
 type ProviderResult = { id: string; first_name: string; last_name: string; specialty: string };
 type Step = 1 | 2 | 3 | 4;
 type SelectedPatient = { id: string; firstName: string; lastName: string; dob: string };
+type NewPatient = { firstName: string; lastName: string; dob: string; phone: string; email: string };
 
 function hasClinicalData(data: ClinicalData) {
   return (
@@ -43,6 +45,7 @@ function StepPatient({
   selected, onSelect, onClear,
   newPatient, onNewChange,
   onStartNew, onBackToSearch,
+  onODImport, odImported, odSearchOpen, onToggleODSearch,
 }: {
   mode: 'search' | 'new';
   query: string;
@@ -52,10 +55,14 @@ function StepPatient({
   selected: SelectedPatient | null;
   onSelect: (p: SelectedPatient) => void;
   onClear: () => void;
-  newPatient: { firstName: string; lastName: string; dob: string; phone: string; email: string };
+  newPatient: NewPatient;
   onNewChange: (field: string, value: string) => void;
   onStartNew: () => void;
   onBackToSearch: () => void;
+  onODImport: (patient: OpenDentalPatient) => void;
+  odImported: boolean;
+  odSearchOpen: boolean;
+  onToggleODSearch: () => void;
 }) {
   const trimmedQuery = query.trim();
 
@@ -140,6 +147,38 @@ function StepPatient({
               Back to search
             </button>
           </div>
+
+          {/* Open Dental import */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={onToggleODSearch}
+              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="text-sm font-medium text-slate-700">Import from Open Dental</span>
+                {odImported && (
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    <CheckCircle2 size={10} />
+                    Imported
+                  </span>
+                )}
+              </div>
+              <ChevronRight
+                size={14}
+                className={`text-slate-400 transition-transform ${odSearchOpen ? 'rotate-90' : ''}`}
+              />
+            </button>
+            {odSearchOpen && (
+              <div className="px-4 pb-4 border-t border-slate-100">
+                <p className="text-xs text-slate-400 py-3">
+                  Search your Open Dental database to auto-fill the form.
+                </p>
+                <OpenDentalPatientSearch onPatientSelect={onODImport} />
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <Field label="First name" required>
               <input
@@ -401,7 +440,10 @@ export default function NewReferralDrawer() {
   const [patientResults, setPatientResults] = useState<PatientResult[]>([]);
   const [patientLoading, setPatientLoading] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<SelectedPatient | null>(null);
-  const [newPatient, setNewPatient] = useState({ firstName: '', lastName: '', dob: '', phone: '', email: '' });
+  const [newPatient, setNewPatient] = useState<NewPatient>({ firstName: '', lastName: '', dob: '', phone: '', email: '' });
+  const [odImported, setOdImported] = useState(false);
+  const [odPatientId, setOdPatientId] = useState<number | null>(null);
+  const [odSearchOpen, setOdSearchOpen] = useState(false);
 
   // Step 2 state
   const [practiceQuery, setPracticeQuery] = useState('');
@@ -460,6 +502,24 @@ export default function NewReferralDrawer() {
       .then(({ data }) => setProviders(data ?? []));
   }, [selectedPractice]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  function handleODImport(patient: OpenDentalPatient) {
+    const dob = patient.Birthdate && !patient.Birthdate.startsWith('0001')
+      ? patient.Birthdate.split('T')[0]
+      : '';
+    const phone = patient.WirelessPhone || patient.HmPhone || '';
+    setNewPatient({
+      firstName: patient.FName,
+      lastName: patient.LName,
+      dob,
+      phone,
+      email: patient.Email,
+    });
+    setOdImported(true);
+    setOdPatientId(patient.PatNum);
+    setOdSearchOpen(false);
+    setPatientMode('new');
+  }
+
   function reset() {
     setStep(1);
     setPatientMode('search');
@@ -468,6 +528,9 @@ export default function NewReferralDrawer() {
     setPatientLoading(false);
     setSelectedPatient(null);
     setNewPatient({ firstName: '', lastName: '', dob: '', phone: '', email: '' });
+    setOdImported(false);
+    setOdPatientId(null);
+    setOdSearchOpen(false);
     setPracticeQuery('');
     setPracticeResults([]);
     setPracticeLoading(false);
@@ -516,6 +579,9 @@ export default function NewReferralDrawer() {
         patientId = data;
       }
 
+      const odNote = odPatientId ? `[Open Dental PatNum: ${odPatientId}]` : '';
+      const fullNotes = [notes.trim(), odNote].filter(Boolean).join('\n');
+
       const { error: refError } = await supabase.rpc('create_referral', {
         p_patient_id: patientId,
         p_referring_practice_id: CURRENT_PRACTICE_ID,
@@ -524,7 +590,7 @@ export default function NewReferralDrawer() {
         p_treatment: treatment.trim(),
         p_priority: priority,
         ...(selectedProviderId && { p_receiving_provider_id: selectedProviderId }),
-        ...(notes.trim() && { p_notes: notes.trim() }),
+        ...(fullNotes && { p_notes: fullNotes }),
         ...(hasClinicalData(clinicalData) && { p_clinical_data: clinicalData }),
       });
       if (refError) throw new Error(refError.message);
@@ -657,8 +723,15 @@ export default function NewReferralDrawer() {
               }}
               onBackToSearch={() => {
                 setPatientMode('search');
+                setOdImported(false);
+                setOdPatientId(null);
+                setOdSearchOpen(false);
                 setNewPatient({ firstName: '', lastName: '', dob: '', phone: '', email: '' });
               }}
+              onODImport={handleODImport}
+              odImported={odImported}
+              odSearchOpen={odSearchOpen}
+              onToggleODSearch={() => setOdSearchOpen((v) => !v)}
             />
           ) : step === 2 ? (
             <StepRecipient

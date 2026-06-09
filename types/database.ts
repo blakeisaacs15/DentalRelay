@@ -156,6 +156,8 @@ export type Database = {
           id: string
           name: string
           npi: string | null
+          open_dental_customer_key: string | null
+          open_dental_patient_key: string | null
           phone: string | null
           specialty: string | null
           state: string | null
@@ -172,6 +174,8 @@ export type Database = {
           id?: string
           name: string
           npi?: string | null
+          open_dental_customer_key?: string | null
+          open_dental_patient_key?: string | null
           phone?: string | null
           specialty?: string | null
           state?: string | null
@@ -188,6 +192,8 @@ export type Database = {
           id?: string
           name?: string
           npi?: string | null
+          open_dental_customer_key?: string | null
+          open_dental_patient_key?: string | null
           phone?: string | null
           specialty?: string | null
           state?: string | null
