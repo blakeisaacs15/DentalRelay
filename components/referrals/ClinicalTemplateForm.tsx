@@ -186,6 +186,7 @@ export default function ClinicalTemplateForm({ data, onChange }: Props) {
             value={data.implantBrand ?? ''}
             onChange={(e) => patch({ implantBrand: e.target.value || null })}
             className="field-input"
+            suppressHydrationWarning
           >
             <option value="">Select brand…</option>
             {IMPLANT_BRANDS.map((b) => (
