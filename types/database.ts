@@ -367,6 +367,7 @@ export type Database = {
       }
       referrals: {
         Row: {
+          access_token: string
           appointment_date: string | null
           clinical_data: Json | null
           completed_at: string | null
@@ -384,6 +385,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access_token?: string
           appointment_date?: string | null
           clinical_data?: Json | null
           completed_at?: string | null
@@ -401,6 +403,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access_token?: string
           appointment_date?: string | null
           clinical_data?: Json | null
           completed_at?: string | null
@@ -644,6 +647,54 @@ export type Database = {
       update_referral_status: {
         Args: { p_referral_id: string; p_status: string }
         Returns: undefined
+      }
+      get_referral_notify_data: {
+        Args: { p_referral_id: string }
+        Returns: {
+          referral_id: string
+          treatment: string
+          priority: string
+          notes: string | null
+          created_at: string
+          status: string
+          patient_first: string
+          patient_last: string
+          patient_dob: string
+          from_practice_name: string
+          from_practice_city: string | null
+          from_practice_state: string | null
+          from_practice_phone: string | null
+          from_practice_email: string | null
+          from_provider_first: string
+          from_provider_last: string
+          from_provider_specialty: string | null
+          to_practice_name: string
+          to_practice_email: string | null
+          access_token: string
+        }[]
+      }
+      get_public_referral_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          referral_id: string
+          treatment: string
+          priority: string
+          notes: string | null
+          created_at: string
+          status: string
+          patient_first: string
+          patient_last: string
+          patient_dob: string
+          from_practice_name: string
+          from_practice_city: string | null
+          from_practice_state: string | null
+          from_practice_phone: string | null
+          from_practice_email: string | null
+          from_provider_first: string
+          from_provider_last: string
+          from_provider_specialty: string | null
+          to_practice_name: string
+        }[]
       }
     }
     Enums: {

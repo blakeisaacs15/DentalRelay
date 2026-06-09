@@ -582,7 +582,7 @@ export default function NewReferralDrawer() {
       const odNote = odPatientId ? `[Open Dental PatNum: ${odPatientId}]` : '';
       const fullNotes = [notes.trim(), odNote].filter(Boolean).join('\n');
 
-      const { error: refError } = await supabase.rpc('create_referral', {
+      const { data: referralId, error: refError } = await supabase.rpc('create_referral', {
         p_patient_id: patientId,
         p_referring_practice_id: CURRENT_PRACTICE_ID,
         p_referring_provider_id: CURRENT_PROVIDER_ID,
@@ -593,7 +593,10 @@ export default function NewReferralDrawer() {
         ...(fullNotes && { p_notes: fullNotes }),
         ...(hasClinicalData(clinicalData) && { p_clinical_data: clinicalData }),
       });
-      if (refError) throw new Error(refError.message);
+      if (refError || !referralId) throw new Error(refError?.message ?? 'Failed to create referral');
+
+      // Fire-and-forget email — don't block the success state on delivery
+      fetch(`/api/referrals/${referralId}/notify`, { method: 'POST' }).catch(() => {});
 
       setSuccess(true);
       setTimeout(() => {
