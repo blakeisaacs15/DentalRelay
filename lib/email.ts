@@ -3,7 +3,6 @@ import { Resend } from 'resend';
 // NOTE: For HIPAA production, replace Resend with AWS SES under your AWS BAA.
 // Resend is used here for development velocity. Configure a verified sending
 // domain at resend.com/domains before sending to real patients.
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export type ReferralEmailData = {
   accessToken: string;
@@ -184,6 +183,8 @@ export async function sendReferralNotification(data: ReferralEmailData) {
   const viewUrl = `${appUrl}/referrals/view/${data.accessToken}`;
 
   const fromAddress = process.env.RESEND_FROM_ADDRESS ?? 'DentalRelay <onboarding@resend.dev>';
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   return resend.emails.send({
     from: fromAddress,
