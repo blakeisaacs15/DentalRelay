@@ -1,7 +1,6 @@
 import { Bell } from 'lucide-react';
 import ReferralStatsBar from '@/components/referrals/ReferralStatsBar';
-import ReferralTable from '@/components/referrals/ReferralTable';
-import ReferralFilters from '@/components/referrals/ReferralFilters';
+import ReferralInbox from '@/components/referrals/ReferralInbox';
 import NewReferralDrawer from '@/components/referrals/NewReferralDrawer';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/lib/current-user';
@@ -101,8 +100,7 @@ export default async function InboxPage() {
       {/* Page content */}
       <div className="flex-1 px-8 py-6 space-y-5">
         <ReferralStatsBar stats={stats} />
-        <ReferralFilters />
-        <ReferralTable referrals={referrals} total={referrals.length} />
+        <ReferralInbox referrals={referrals} />
       </div>
     </div>
   );
