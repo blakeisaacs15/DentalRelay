@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Mail, Phone, Search, Shield } from 'lucide-react';
 import { createSupabaseClient } from '@/lib/supabase/client';
-import { CURRENT_PRACTICE_ID } from '@/lib/current-user';
 
 export type PatientRow = {
   id: string;
@@ -45,9 +44,10 @@ function formatDob(dob: string) {
 
 interface Props {
   initialPatients: PatientRow[];
+  practiceId: string;
 }
 
-export default function PatientDirectory({ initialPatients }: Props) {
+export default function PatientDirectory({ initialPatients, practiceId }: Props) {
   const supabase = useRef(createSupabaseClient()).current;
   const [query, setQuery] = useState('');
   const [patients, setPatients] = useState(initialPatients);
@@ -58,7 +58,7 @@ export default function PatientDirectory({ initialPatients }: Props) {
     const t = setTimeout(async () => {
       setLoading(true);
       const { data } = await supabase.rpc('get_patients_for_practice', {
-        p_practice_id: CURRENT_PRACTICE_ID,
+        p_practice_id: practiceId,
         p_query: trimmed,
       });
       setPatients(

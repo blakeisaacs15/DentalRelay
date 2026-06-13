@@ -4,6 +4,7 @@ import ReferralTable from '@/components/referrals/ReferralTable';
 import ReferralFilters from '@/components/referrals/ReferralFilters';
 import NewReferralDrawer from '@/components/referrals/NewReferralDrawer';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/current-user';
 import type { Referral, ReferralStats, ReferralStatus } from '@/types/referral';
 
 type InboxRow = {
@@ -78,6 +79,7 @@ async function getReferrals(): Promise<{ referrals: Referral[]; stats: ReferralS
 
 export default async function InboxPage() {
   const { referrals, stats } = await getReferrals();
+  const { practiceId, providerId } = await getCurrentUser();
 
   return (
     <div className="flex flex-col min-h-full">
@@ -92,7 +94,7 @@ export default async function InboxPage() {
             <Bell size={18} />
             <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-blue-500 rounded-full" />
           </button>
-          <NewReferralDrawer />
+          <NewReferralDrawer currentPracticeId={practiceId} currentProviderId={providerId} />
         </div>
       </header>
 

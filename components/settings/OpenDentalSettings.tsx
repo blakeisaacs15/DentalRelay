@@ -3,14 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, XCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { createSupabaseClient } from '@/lib/supabase/client';
-import { CURRENT_PRACTICE_ID } from '@/lib/current-user';
 
 // Read-only fetch of current keys (anon client, no RLS issue for SELECT)
 // Write goes through the admin-backed API route to bypass RLS
 
 type ConnectionStatus = 'unknown' | 'connected' | 'disconnected' | 'testing';
 
-export default function OpenDentalSettings() {
+interface Props {
+  practiceId: string;
+}
+
+export default function OpenDentalSettings({ practiceId }: Props) {
   const supabase = useRef(createSupabaseClient()).current;
 
   const [customerKey, setCustomerKey] = useState('');
@@ -27,7 +30,7 @@ export default function OpenDentalSettings() {
     supabase
       .from('practices')
       .select('open_dental_customer_key, open_dental_patient_key')
-      .eq('id', CURRENT_PRACTICE_ID)
+      .eq('id', practiceId)
       .single()
       .then(({ data }) => {
         if (data?.open_dental_customer_key) setCustomerKey(data.open_dental_customer_key);
@@ -46,7 +49,7 @@ export default function OpenDentalSettings() {
     setSaveError(null);
     setSaved(false);
 
-    const res = await fetch(`/api/practices/${CURRENT_PRACTICE_ID}`, {
+    const res = await fetch(`/api/practices/${practiceId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

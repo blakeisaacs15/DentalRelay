@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
-import { CURRENT_PRACTICE_ID } from '@/lib/current-user';
+import { getCurrentUser } from '@/lib/current-user';
 import type { OpenDentalPatient } from '@/types/open-dental';
 
 export type { OpenDentalPatient };
@@ -15,11 +15,12 @@ async function getCredentials(): Promise<{ customerKey: string; patientKey: stri
 
   // Fall back to Supabase practices table (requires service role key)
   try {
+    const { practiceId } = await getCurrentUser();
     const admin = createSupabaseAdminClient();
     const { data } = await admin
       .from('practices')
       .select('open_dental_customer_key, open_dental_patient_key')
-      .eq('id', CURRENT_PRACTICE_ID)
+      .eq('id', practiceId)
       .single();
 
     if (data?.open_dental_customer_key && data?.open_dental_patient_key) {

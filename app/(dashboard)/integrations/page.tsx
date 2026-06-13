@@ -1,6 +1,9 @@
 import OpenDentalSettings from '@/components/settings/OpenDentalSettings';
+import { getCurrentUser } from '@/lib/current-user';
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+  const { practiceId } = await getCurrentUser();
+
   return (
     <div className="max-w-2xl mx-auto px-8 py-10">
       <div className="mb-8">
@@ -25,7 +28,7 @@ export default function IntegrationsPage() {
           </div>
         </div>
         <div className="px-6 py-5">
-          <OpenDentalSettings />
+          <OpenDentalSettings practiceId={practiceId} />
         </div>
       </div>
     </div>

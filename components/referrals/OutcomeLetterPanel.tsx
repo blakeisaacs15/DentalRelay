@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react';
 import { FileSignature } from 'lucide-react';
 import { createSupabaseClient } from '@/lib/supabase/client';
-import { CURRENT_PROVIDER_ID } from '@/lib/current-user';
 
 export type OutcomeLetter = {
   id: string;
@@ -135,9 +134,10 @@ interface Props {
   recipientName: string;
   recipientPractice: string;
   initialLetters: OutcomeLetter[];
+  currentProviderId: string;
 }
 
-export default function OutcomeLetterPanel({ referralId, recipientName, recipientPractice, initialLetters }: Props) {
+export default function OutcomeLetterPanel({ referralId, recipientName, recipientPractice, initialLetters, currentProviderId }: Props) {
   const supabase = useRef(createSupabaseClient()).current;
   const [letters, setLetters] = useState(initialLetters);
   const [composing, setComposing] = useState(false);
@@ -165,7 +165,7 @@ export default function OutcomeLetterPanel({ referralId, recipientName, recipien
     const followUpRequired = form.followUpRequired === 'yes';
     const { data: id, error: rpcError } = await supabase.rpc('create_outcome_letter', {
       p_referral_id: referralId,
-      p_provider_id: CURRENT_PROVIDER_ID,
+      p_provider_id: currentProviderId,
       p_treatment_performed: form.treatmentPerformed.trim(),
       p_outcome: form.outcome as string,
       p_signature_name: form.signatureName.trim(),

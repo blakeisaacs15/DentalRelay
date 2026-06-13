@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react';
 import { Send } from 'lucide-react';
 import { createSupabaseClient } from '@/lib/supabase/client';
-import { CURRENT_PROVIDER_ID } from '@/lib/current-user';
 
 export type ThreadMessage = {
   id: string;
@@ -38,9 +37,10 @@ function initialsOf(name: string) {
 interface Props {
   referralId: string;
   initialMessages: ThreadMessage[];
+  currentProviderId: string;
 }
 
-export default function MessageThread({ referralId, initialMessages }: Props) {
+export default function MessageThread({ referralId, initialMessages, currentProviderId }: Props) {
   const supabase = useRef(createSupabaseClient()).current;
   const [messages, setMessages] = useState(initialMessages);
   const [draft, setDraft] = useState('');
@@ -56,7 +56,7 @@ export default function MessageThread({ referralId, initialMessages }: Props) {
 
     const { data: id, error: sendError } = await supabase.rpc('send_referral_message', {
       p_referral_id: referralId,
-      p_sender_id: CURRENT_PROVIDER_ID,
+      p_sender_id: currentProviderId,
       p_content: content,
     });
 
@@ -73,7 +73,7 @@ export default function MessageThread({ referralId, initialMessages }: Props) {
         content,
         isRead: false,
         createdAt: new Date().toISOString(),
-        senderId: CURRENT_PROVIDER_ID,
+        senderId: currentProviderId,
         senderName: 'You',
         senderPractice: '',
       },
@@ -104,7 +104,7 @@ export default function MessageThread({ referralId, initialMessages }: Props) {
           </p>
         )}
         {messages.map((m) => {
-          const mine = m.senderId === CURRENT_PROVIDER_ID;
+          const mine = m.senderId === currentProviderId;
           return (
             <div key={m.id} className={`flex gap-3 ${mine ? 'flex-row-reverse' : ''}`}>
               <div

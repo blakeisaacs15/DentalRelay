@@ -5,6 +5,7 @@ import MessageThread, { type ThreadMessage } from '@/components/referrals/Messag
 import OutcomeLetterPanel, { type OutcomeLetter } from '@/components/referrals/OutcomeLetterPanel';
 import ReferralStatusControl from '@/components/referrals/ReferralStatusControl';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/current-user';
 import type { ReferralStatus } from '@/types/referral';
 
 type DetailRow = {
@@ -95,6 +96,7 @@ interface PageProps {
 
 export default async function ReferralDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const { providerId: currentProviderId } = await getCurrentUser();
   const supabase = await createSupabaseServerClient();
 
   const [{ data: detailRows }, { data: messageRows }, { data: letterRows }] = await Promise.all([
@@ -258,7 +260,7 @@ export default async function ReferralDetailPage({ params }: PageProps) {
 
           {/* Right column: conversation */}
           <div className="lg:col-span-3">
-            <MessageThread referralId={detail.id} initialMessages={messages} />
+            <MessageThread referralId={detail.id} initialMessages={messages} currentProviderId={currentProviderId} />
           </div>
         </div>
 
@@ -268,6 +270,7 @@ export default async function ReferralDetailPage({ params }: PageProps) {
             recipientName={`Dr. ${detail.from_provider_first} ${detail.from_provider_last}`}
             recipientPractice={detail.from_practice_name}
             initialLetters={outcomeLetters}
+            currentProviderId={currentProviderId}
           />
         </div>
       </div>

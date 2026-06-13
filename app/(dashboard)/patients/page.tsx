@@ -1,6 +1,6 @@
 import PatientDirectory, { type PatientRow } from '@/components/patients/PatientDirectory';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { CURRENT_PRACTICE_ID } from '@/lib/current-user';
+import { getCurrentUser } from '@/lib/current-user';
 
 type PatientListRow = {
   id: string;
@@ -16,9 +16,10 @@ type PatientListRow = {
 };
 
 export default async function PatientsPage() {
+  const { practiceId } = await getCurrentUser();
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.rpc('get_patients_for_practice', {
-    p_practice_id: CURRENT_PRACTICE_ID,
+    p_practice_id: practiceId,
     p_query: '',
   });
 
@@ -47,7 +48,7 @@ export default async function PatientsPage() {
 
       {/* Page content */}
       <div className="flex-1 px-8 py-6">
-        <PatientDirectory initialPatients={patients} />
+        <PatientDirectory initialPatients={patients} practiceId={practiceId} />
       </div>
     </div>
   );

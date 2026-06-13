@@ -6,7 +6,6 @@ import {
   X, Plus, Search, ChevronRight, ChevronLeft, CheckCircle2, UserPlus,
 } from 'lucide-react';
 import { createSupabaseClient } from '@/lib/supabase/client';
-import { CURRENT_PRACTICE_ID, CURRENT_PROVIDER_ID } from '@/lib/current-user';
 import ClinicalTemplateForm, { EMPTY_CLINICAL_DATA, type ClinicalData } from './ClinicalTemplateForm';
 import OpenDentalPatientSearch, { type OpenDentalPatient } from './OpenDentalPatientSearch';
 
@@ -424,7 +423,12 @@ function Field({ label, required, children }: { label: string; required?: boolea
 
 // ─── Main drawer ──────────────────────────────────────────────────────────────
 
-export default function NewReferralDrawer() {
+interface Props {
+  currentPracticeId: string;
+  currentProviderId: string;
+}
+
+export default function NewReferralDrawer({ currentPracticeId, currentProviderId }: Props) {
   const router = useRouter();
   const supabase = useRef(createSupabaseClient()).current;
 
@@ -486,7 +490,7 @@ export default function NewReferralDrawer() {
       setPracticeLoading(true);
       const { data } = await supabase.rpc('search_practices', {
         p_query: practiceQuery.trim(),
-        p_exclude_id: CURRENT_PRACTICE_ID,
+        p_exclude_id: currentPracticeId,
       });
       setPracticeResults(data ?? []);
       setPracticeLoading(false);
@@ -571,7 +575,7 @@ export default function NewReferralDrawer() {
           p_first_name: newPatient.firstName.trim(),
           p_last_name: newPatient.lastName.trim(),
           p_dob: newPatient.dob,
-          p_practice_id: CURRENT_PRACTICE_ID,
+          p_practice_id: currentPracticeId,
           ...(newPatient.phone && { p_phone: newPatient.phone }),
           ...(newPatient.email && { p_email: newPatient.email }),
         });
@@ -584,8 +588,8 @@ export default function NewReferralDrawer() {
 
       const { data: referralId, error: refError } = await supabase.rpc('create_referral', {
         p_patient_id: patientId,
-        p_referring_practice_id: CURRENT_PRACTICE_ID,
-        p_referring_provider_id: CURRENT_PROVIDER_ID,
+        p_referring_practice_id: currentPracticeId,
+        p_referring_provider_id: currentProviderId,
         p_receiving_practice_id: selectedPractice!.id,
         p_treatment: treatment.trim(),
         p_priority: priority,
